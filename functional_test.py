@@ -32,11 +32,13 @@ class NewVisitorTest(unittest.TestCase):
 
         #엔터를 치면 페이지가 갱신되고, 1.hello 가 추가됨
         inputbox.send_keys(Keys.ENTER)
+        self.browser.implicitly_wait(1)
 
         table = self.browser.find_element_by_id('id_list_table')
-        rows = table.find_element_by_tag_name('tr')
-        self.assertIn(
-            any(row.text == '1.hello' for row in rows),
+        rows = table.find_elements_by_tag_name('tr')
+        self.assertTrue(
+            any(row.text == '1: hello' for row in rows),
+            "신규 작업이 테이블에 표시되지 않는다."
         )
 
         self.fail('finish test')

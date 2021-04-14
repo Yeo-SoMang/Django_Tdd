@@ -14,28 +14,57 @@ class HomePageTest(TestCase):
         self.assertEqual(found.func, home_page)
 
     def test_home_page_returns_correct_html(self):
+        # response = self.client.get('/')
+        request = HttpRequest()
+        response = home_page(request)
+        # self.assertTemplateUsed(response, 'home.html')
+        expected_html = render_to_string('home.html')
+
+        # decode를 이용해 바이트 데이터를 파이썬 유니코드 문자열로 변환함.
+        # 이로 인해서 바이트와 바이트를 비교하는 것이 아니라 문자열끼리 비교가 가능
+        self.assertEqual(response.content.decode(), expected_html)
+
+        # self.assertTrue(response.content.startswith(b'<html>'))
+        # self.assertIn(b'<title>To-Do lists</title>', response.content)
+        # self.assertTrue(response.content.strip().endswith(b'</html>'))
+
+
+    def test_home_page_can_save_a_POST_request(self):
+        request = HttpRequest()
+        request.method = 'POST'
+        request.POST['item_text'] = '신규 작업 아이템'
+#
+        response = home_page(request)
+#
+        self.assertEqual(Item.objects.count(), 1)
+        new_item = Item.objects.first()
+        self.assertEqual(new_item.text, '신규 작업 아이템')
+
+    def test_home_page_redirects_after_POST(self):
         request = HttpRequest()
         request.method = 'POST'
         request.POST['item_text'] = '신규 작업 아이템'
 
         response = home_page(request)
 
-        # self.assertTrue(response.content.startswith(b'<html>'))
-        # self.assertIn(b'<title>To-Do lists</title>', response.content)
-        # self.assertTrue(response.content.strip().endswith(b'</html>'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['location'], '/')
 
-        # expected_html = render_to_string('home.html')
+    def test_home_page_only_saves_items_when_necessary(self):
+        request = HttpRequest()
+        home_page(request)
+        self.assertEqual(Item.objects.count(), 0)
 
-        #decode를 이용해 바이트 데이터를 파이썬 유니코드 문자열로 변환함.
-        #이로 인해서 바이트와 바이트를 비교하는 것이 아니라 문자열끼리 비교가 가능
-        # self.assertEqual(response.content.decode(), expected_html)
+    def test_home_page_displays_all_list_items(self):
+        Item.objects.create(text='itemey 1')
+        Item.objects.create(text='itemey 2')
 
-        self.assertIn('신규 작업 아이템', response.content.decode())
-        expected_html = render_to_string(
-            'home.html',
-            {'new_item_text': '신규 작업 아이템'}
-        )
-        self.assertEqual(response.content.decode(), expected_html)
+        request = HttpRequest()
+        response = home_page(request)
+
+        self.assertIn('itemey 1', response.content.decode())
+        self.assertIn('itemey 2', response.content.decode())
+
 
 class ItemModelTest(TestCase):
 

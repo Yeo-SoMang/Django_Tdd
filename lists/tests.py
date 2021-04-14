@@ -5,6 +5,7 @@ from django.urls import resolve
 #view에서 랜더링한 문자열을 리턴하기위한 함수
 from django.template.loader import render_to_string
 from .views import home_page
+from .models import Item
 
 class HomePageTest(TestCase):
 
@@ -14,11 +15,43 @@ class HomePageTest(TestCase):
 
     def test_home_page_returns_correct_html(self):
         request = HttpRequest()
+        request.method = 'POST'
+        request.POST['item_text'] = '신규 작업 아이템'
+
         response = home_page(request)
-        expected_html = render_to_string('home.html')
-        #decode를 이용해 바이트 데이터를 파이썬 유니코드 문자열로 변환함.
-        #이로 인해서 바이트와 바이트를 비교하는 것이 아니라 문자열끼리 비교가 가능
-        self.assertEqual(response.content.decode(), expected_html)
+
         # self.assertTrue(response.content.startswith(b'<html>'))
         # self.assertIn(b'<title>To-Do lists</title>', response.content)
         # self.assertTrue(response.content.strip().endswith(b'</html>'))
+
+        # expected_html = render_to_string('home.html')
+
+        #decode를 이용해 바이트 데이터를 파이썬 유니코드 문자열로 변환함.
+        #이로 인해서 바이트와 바이트를 비교하는 것이 아니라 문자열끼리 비교가 가능
+        # self.assertEqual(response.content.decode(), expected_html)
+
+        self.assertIn('신규 작업 아이템', response.content.decode())
+        expected_html = render_to_string(
+            'home.html',
+            {'new_item_text': '신규 작업 아이템'}
+        )
+        self.assertEqual(response.content.decode(), expected_html)
+
+class ItemModelTest(TestCase):
+
+    def test_saving_and_retrieving_items(self):
+        first_item = Item()
+        first_item.text = '첫번째 아이템'
+        first_item.save()
+
+        second_item = Item()
+        second_item.text = '두번째 아이템'
+        second_item.save()
+
+        saved_items = Item.objects.all()
+        self.assertEqual(saved_items.count(),2)
+
+        first_saved_item = saved_items[0]
+        Second_saved_item = saved_items[1]
+        self.assertEqual(first_saved_item.text, '첫번째 아이템')
+        self.assertEqual(Second_saved_item.text, '두번째 아이템')
